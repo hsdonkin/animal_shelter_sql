@@ -1,0 +1,11 @@
+<h1>Animals:</h1>
+
+<% @animals_avail.each do |animal| %>
+<div class="animals">
+  <h3><%= animal.name%></h3>
+  <p><%= @animal_types[animal.type.to_i]%></p>
+  <p><%= animal.gender %></p>
+  <p><%= animal.date %></p>
+  <p><%= animal.breed %></p>
+</div>
+<% end %>

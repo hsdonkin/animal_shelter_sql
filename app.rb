@@ -3,14 +3,31 @@ require 'sinatra/reloader'
 also_reload("./lib/**/*.rb")
 require 'pry'
 require 'pg'
+require("./lib/animal")
 
 DB = PG.connect({:dbname => "animal_shelter"})
 
 get ('/') do
+  @animal_types = [nil]
+  types_result = DB.exec("SELECT * FROM animal_types;")
+  types_result.each {|type| @animal_types.push(type["type"])}
+
+  @result = DB.exec("SELECT * FROM animals;")
+  @animals_avail = []
+  @result.each do |result|
+  animal = Animal.new({:name => result["name"], :id => result["id"], :gender => result["gender"], :date => result["date"], :type => result["type"], :breed => result["breed"]})
+  @animals_avail.push(animal)
+  end
   erb :default
 end
 
 get ('/animals') do
+  @result = DB.exec("SELECT * FROM animals;")
+  @animals_avail = []
+  @result.each do |result|
+  animal = Animal.new({:name => result["name"], :id => result["id"], :gender => result["gender"], :date => result["date"], :type => result["type"], :breed => result["breed"]})
+  @animals_avail.push(animal)
+  end
   erb :animals
 end
 
@@ -24,4 +41,10 @@ post ('/add_animal') do
   DB.exec("INSERT INTO animals (name, gender, date, type, breed) VALUES ('#{params[:animal_name]}', '#{params[:animal_gender]}', '#{Time.new.year.to_s}-#{Time.new.month.to_s}-#{Time.new.day.to_s}', '#{animal_types.find_index(params[:animal_type])}', '#{params[:animal_breed]}');")
 
   redirect to ('/animals')
+end
+
+get ('/type')do
+  @result = DB.exec("SELECT * FROM animals ORDER BY type")
+  # binding.pry
+  erb :type
 end
