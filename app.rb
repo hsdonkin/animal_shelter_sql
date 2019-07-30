@@ -8,14 +8,22 @@ require("./lib/animal")
 DB = PG.connect({:dbname => "animal_shelter"})
 
 get ('/') do
+  # this creates an array of animal types (cat, dog, etc)
+  # this future proofs the database because we might add in lizards and turkeys in v2.0
   @animal_types = [nil]
   types_result = DB.exec("SELECT * FROM animal_types;")
   types_result.each {|type| @animal_types.push(type["type"])}
 
+  # this grabs all the animals available
   @result = DB.exec("SELECT * FROM animals;")
+  # this array exists to create animal objects to append to the page
+  # it's kind of redundant, but this way we have some documentation in the program of what to expect from the database
   @animals_avail = []
+
+  #create a bunch of animal objects
   @result.each do |result|
   animal = Animal.new({:name => result["name"], :id => result["id"], :gender => result["gender"], :date => result["date"], :type => result["type"], :breed => result["breed"]})
+  #add them to the array
   @animals_avail.push(animal)
   end
   erb :default
@@ -44,7 +52,37 @@ post ('/add_animal') do
 end
 
 get ('/type')do
+  # all same as above
+  @animal_types = [nil]
+  types_result = DB.exec("SELECT * FROM animal_types;")
+  types_result.each {|type| @animal_types.push(type["type"])}
+
+  #this ORDERs the animals based on their type ID, which is 1 for cats 2 for dogs etc
   @result = DB.exec("SELECT * FROM animals ORDER BY type")
-  # binding.pry
+  @animals_avail = []
+  @result.each do |result|
+  animal = Animal.new({:name => result["name"], :id => result["id"], :gender => result["gender"], :date => result["date"], :type => result["type"], :breed => result["breed"]})
+  @animals_avail.push(animal)
+  end
   erb :type
+end
+
+get ('/customers')do
+  @animal_types = [nil]
+  types_result = DB.exec("SELECT * FROM animal_types;")
+  types_result.each {|type| @animal_types.push(type["type"])}
+
+  @result = DB.exec("SELECT * FROM customers;")
+  @customers = []
+  # for each thing you get back from the database, create a customer object and push it to the array to be appended to the page
+  @result.each {|result| @customers.push(Customer.new({:name => result["name"], :id => result["id"], :phone => result["phone"], :animal_pref => result["animal_pref"], :breed_pref => result["breed_pref"]}))}
+  erb :customers
+end
+
+post ('/customers')do
+  @animal_types = [nil]
+  types_result = DB.exec("SELECT * FROM animal_types;")
+  types_result.each {|type| @animal_types.push(type["type"])}
+  DB.exec("INSERT INTO customers (name, phone, animal_pref, breed_pref) VALUES ('#{params[:customer_name]}', '#{params[:customer_phone]}', '#{params[:customer_type]}', '#{params[:breed_pref]}');")
+  redirect to ('/customers')
 end
